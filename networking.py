@@ -83,6 +83,10 @@ def socket_connect():
         print("Setting up simulated socket connection")
         return
 
+    # Refresh the socket - seems to help sometimes
+    global my_socket
+    my_socket = pool.socket()
+
     #TODO: socket connection code for real hardware
 
 # Internal variable for tracking if we're currently listening (secondary control node does this).
@@ -107,6 +111,10 @@ def socket_listen(callback_function):
         print("Setting up simulated socket listen")
         return
 
+    # Refresh the socket - seems to help sometimes
+    global my_socket
+    my_socket = pool.socket()
+    
     # TODO: actual socket listening...
 
 # Send a message over the socket. msg is the message to be sent and should be a string.
