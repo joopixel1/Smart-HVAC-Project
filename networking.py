@@ -48,7 +48,7 @@ if USE_BUILTIN_NETWORKING:
     my_socket = socket.socket()
 else:
     pool = socketpool.SocketPool(wifi.radio)
-    my_socket = pool.socket()
+    my_socket = None
 
 # Connects to the configured network. Should be called before attempting any network operations.
 def connect_to_network():
