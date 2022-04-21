@@ -26,7 +26,8 @@ sed -i "s/node_type = ./node_type = $1/g" $3/node_config.py
 
 # If this is a temp measurement node, update the zone_id
 if [ $1 -eq 3 ]; then
-	ZONE = `expr $2 - 1`
+	ZONE=`expr $2 - 1`
+	echo $ZONE
 	sed -i "s/zone_id = ./zone_id = $ZONE/g" $3/node_config.py
 fi
 
