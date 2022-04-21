@@ -162,6 +162,9 @@ _queued_feeds = []
 # List of feeds that we have subscribed to
 _subscribed_feeds = []
 
+# List of MQTT message received callback functions
+_message_received_callbacks = []
+
 # Callback function that is called when the MQTT client connects to the broker
 def mqtt_connected(client, userdata, flags, rc):
     print("Connected to Adafruit IO!")
@@ -178,6 +181,20 @@ def mqtt_connected(client, userdata, flags, rc):
 # Callback function that is called when the MQTT client disconnects from the broker
 def mqtt_disconnected(client, userdata, rc):
     print("Disconnected from Adafruit IO!")
+
+# Callback function that is called when the MQTT client receives a message.
+# This function, in turn, calls all registered callbacks from different modules.
+def mqtt_message_received(client, topic, message):
+    for cb in _message_received_callbacks:
+        print(f"MQTT callback for {cb}")
+        try:
+            cb(client, topic, message)
+        except TypeError as e:
+            # Assume this means it's a one-parameter callback, such as the socket comm callback
+            if 'cooling-and-heating' in topic:
+                import command
+                cmd = command.Command(type=command.TYPE_HEAT_COOL, values=[message])
+                cb(str(cmd))
 
 # Configure the callback functions for the client.
 mqtt_client.on_connect = mqtt_connected
@@ -206,9 +223,12 @@ def mqtt_initialize():
 # Currently only one message callback is supported. This works for the current architecture
 # because only the primary control node needs to subscribe to feeds.
 def mqtt_connect(feeds = [], message_callback = None):
-    # Save the callback function in the MQTT client config.
+    # Save the callback function. It will be called in the intermediate callback.
     if message_callback is not None:
-        mqtt_client.on_message = message_callback
+        _message_received_callbacks.append(message_callback)
+    
+    # Point the MQTT client at the intermediate callback.
+    mqtt_client.on_message = mqtt_message_received
 
     try:
         # Check to see if the client is connected. For some reason this throws an error if it's not, so we're
@@ -234,7 +254,11 @@ def mqtt_connect(feeds = [], message_callback = None):
 
 # Publish a message to a feed. feed is the feed to publish to, and value is the body of the message.
 def mqtt_publish_message(feed, value):
-    mqtt_client.publish(feed, value)
+    try:
+        mqtt_client.publish(feed, value)
+    except OSError as e:
+        print('MQTT disconnected, reconnecting...')
+        mqtt_connect()
 
 #------------End MQTT code-----------------#
 
