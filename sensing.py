@@ -28,20 +28,15 @@ def lm35_temperature_c():
 #---------FunHouse code----------#
 # FunHouse initialization
 if node_type == NODE_TYPE_SIMULATED:
-    _aht20 = None
+    _lm35_pin = None
 elif board.board_id == 'adafruit_funhouse':
-    i2c = board.I2C()
-    import adafruit_ahtx0
-    _aht20 = adafruit_ahtx0.AHTx0(i2c)
+    _lm35_pin = analogio.AnalogIn(board.A0)
 else:
-    _aht20 = None
+    _lm35_pin = None
 
 # Get a temperature reading from the FunHouse internal temperature sensor
 def funhouse_temperature_c():
-    if _aht20 is None:
-        print('Error: tried to get FunHouse temperature but this is not a FunHouse')
-        return 0
-    return _aht20.temperature
+    return lm35_temperature_c()
 #---------End FunHouse code----------#
 
 # Convert Celsius to Fahrenheit
