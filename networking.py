@@ -31,14 +31,13 @@ SECONDARY_HOST = secrets["secondary_node_ip"]
 # Maximum length of a message sent over the socket. We set this to the same as the maximum Command length.
 SOCKET_MESSAGE_MAX_LENGTH = 100
 
-# Configure the Adafruit IO connection info. Your key can be found on the Adafruit IO web portal.
-aio_username = secrets["aio_username"]
-aio_key = secrets["aio_key"]
+# Get the MQTT username.
+mqtt_username = secrets["mqtt_username"]
 
 # These are the MQTT feeds used. Feeds that are lists are indexed by zone_id.
 TEMP_FEEDS = []
 SETPOINT_FEEDS = []
-COOLING_HEATING_FEED = aio_username + "/feeds/287x-hvac.cooling-and-heating"
+COOLING_HEATING_FEED = mqtt_username + "/feeds/287x-hvac.cooling-and-heating"
 DAMPER_FEEDS = []
 
 # Set up some socket resources.
@@ -145,10 +144,10 @@ def socket_disconnect():
 
 # Configure a MiniMQTT Client
 mqtt_client = MQTT.MQTT(
-    broker=secrets["broker"],
+    broker=secrets["mqtt_broker"],
     port=secrets["port"],
-    username=secrets["aio_username"],
-    password=secrets["aio_key"],
+    username=secrets["mqtt_username"],
+    password=secrets["mqtt_key"],
     socket_pool=pool,
     ssl_context=ssl.create_default_context(),
 )
@@ -211,9 +210,9 @@ def mqtt_initialize():
     _mqtt_is_initialized = True
 
     # Define the feed lists
-    TEMP_FEEDS.extend([aio_username + f"/feeds/287x-hvac.temperature-zone-{i}" for i in range(1, num_zones + 1)])
-    SETPOINT_FEEDS.extend([aio_username + f"/feeds/287x-hvac.set-point-zone-{i}" for i in range(1, num_zones + 1)])
-    DAMPER_FEEDS.extend([aio_username + f"/feeds/287x-hvac.damper-zone-{i}" for i in range(1, num_zones + 1)])
+    TEMP_FEEDS.extend([mqtt_username + f"/feeds/287x-hvac.temperature-zone-{i}" for i in range(1, num_zones + 1)])
+    SETPOINT_FEEDS.extend([mqtt_username + f"/feeds/287x-hvac.set-point-zone-{i}" for i in range(1, num_zones + 1)])
+    DAMPER_FEEDS.extend([mqtt_username + f"/feeds/287x-hvac.damper-zone-{i}" for i in range(1, num_zones + 1)])
 
     # Print the defined feeds for debugging purposes
     print(f"Feeds available: {TEMP_FEEDS}, {SETPOINT_FEEDS}, {DAMPER_FEEDS}, {COOLING_HEATING_FEED}")

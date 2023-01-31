@@ -4,10 +4,10 @@
 secrets = {
     'ssid' : 'IASTATE',
     'password' : '', # Leave blank for IASTATE
-    'aio_username' : '',
-    'aio_key' : '', # Found on Adafruit IO web portal
     'timezone' : "America/Chicago", # http://worldtimeapi.org/timezones
-    'broker' : 'io.adafruit.com',
+    'mqtt_username' : '',
+    'mqtt_key' : '', # Found on Adafruit IO web portal
+    'mqtt_broker' : '',
     'port' : 1883,
     'primary_node_ip' : '',
     'secondary_node_ip' : ''
