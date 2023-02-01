@@ -46,8 +46,8 @@ class Simulation:
         # at http://docs.circuitpython.org/en/latest/shared-bindings/time/index.html. We recommend time.monotonic_ns(). Also note that
         # temperature_measurement_node.py has an elapsed time calculation, and you may be able to use a similar approach here.
         
-        # TODO: call self._update_temps()
-        pass
+        # TODO: pass in the actual elapsed time.
+        self._update_temps(0)
 
 # Used for testing the simulation.
 if __name__ == '__main__':

@@ -16,6 +16,8 @@ def socket_message_received(msg):
 def loop():
     # TODO: throttle this loop? (i.e. don't run it every time)
 
-    print("Executing secondary control node loop")
+    #print("Executing secondary control node loop")
 
     # TODO: maybe? anything to do here?
+
+    pass

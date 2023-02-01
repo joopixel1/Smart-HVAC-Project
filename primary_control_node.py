@@ -16,6 +16,8 @@ def message_received(client, topic, message):
 def loop():
     # TODO: throttle this loop? (i.e. don't run it every time)
 
-    print("Executing primary control node loop")
+    #print("Executing primary control node loop")
 
     # TODO: Main temperature control logic
+
+    pass

@@ -34,8 +34,8 @@ def loop():
         # TODO: Get the current temperature using the appropriate function from the sensing module
         current_temp = 0
 
-        # TODO: Also consider printing it!
+        print(f'Zone {zone} temp: {current_temp}')
 
         # TODO: do we need to report the temperature EVERY time? Report only if the new reading is
         # significantly different from the old one!
-        networking.mqtt_publish_message(networking.TEMP_FEEDS[zone], current_temp)
+        #networking.mqtt_publish_message(networking.TEMP_FEEDS[zone], current_temp)
