@@ -1,7 +1,9 @@
 from node_config import num_zones
 import time
+from zone import Zone
 
 # TODO: define some values?
+
 
 # The Simulation(R)
 _sim = None
@@ -20,24 +22,32 @@ class Simulation:
     # Initializes the simulation.
     def __init__(self, num_zones):
        # TODO: initialize additional class variables. These are probably variables that represent the state of the physical system.
+       self.zones=[]
+       for i in range(num_zones):
+            newzone = Zone()
+            self.zones.append(newzone)
+       #self.num_zones = num_zones
        self.heating = False
        self.cooling = False
 
     # Returns the current temperature in the zone specified by zone_id
     def get_temperature_f(self, zone_id):
         # TODO: implement
-        return 0
+        
+        return self.zones[zone_id].getTemp()
 
     # Sets the damper(s) for the zone specified by zone_id to the percentage
     # specified by percent. 0 is closed, 100 is fully open.
     def set_damper(self, zone_id, percent):
         # TODO: implement
-        pass
+        self.zones[zone_id].setDamper(percent)
 
     # Update the temperatures of the zones, given that elapsed_time_ms milliseconds
     # have elapsed since this was previously called.
     def _update_temps(self, elapsed_time_ms):
         # TODO: Update all temps
+        for i in range (num_zones):
+            self.zones[i].updateTemp(elapsed_time_ms)
         pass
     
     # Runs periodic simulation actions.
