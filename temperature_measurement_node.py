@@ -1,6 +1,7 @@
 from node_config import *
 import networking
 import time
+import sensing
 
 # Set up networking.
 networking.connect_to_network()
@@ -31,8 +32,7 @@ def loop():
         zones = [i for i in range(num_zones)]
 
     for zone in zones:
-        # TODO: Get the current temperature using the appropriate function from the sensing module
-        current_temp = 0
+        current_temp = sensing.get_current_temperature_f(zone)
 
         print(f'Zone {zone} temp: {current_temp}')
 

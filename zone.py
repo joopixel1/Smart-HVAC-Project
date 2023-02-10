@@ -1,22 +1,20 @@
-#this should work
-import time
+#from simulation import Simulation 
+
 class Zone:
-    def __init__(self) -> None:
+    def __init__(self, simul ) -> None:
         self.temp = 20
         self.damper = 0
-        
+        self.simul = simul
+
     def getTemp(self):
-        return self.temp 
-
-
-    def setDamper(self, percent):
-        self.damper= percent
+        return self.temp
     
-    def updateTemp(self, ms):
-        initialTime = time.monotonic_ns()
-        pastTime = time.monotonic_ns()
-        while 1:
-            pastTime = time.monotonic_ns()
-            if ((pastTime - initialTime)* 1000000) >= ms:
-                self.temp=15
-                break
+    def setDamper(self, percent):
+        self.damper = percent
+        
+    def updateTemp(self):
+        if(self.simul.heating):
+            self.temp += 1
+        elif(self.simul.cooling):
+            self.temp -= 1
+            
