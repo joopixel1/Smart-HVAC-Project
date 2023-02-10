@@ -3,7 +3,7 @@ import time
 from zone import Zone
 
 # TODO: define some values?
-
+percent = 50
 
 # The Simulation(R)
 _sim = None
@@ -46,10 +46,24 @@ class Simulation:
     # have elapsed since this was previously called.
     def _update_temps(self, elapsed_time_ms):
         # TODO: Update all temps
-        for i in range (num_zones):
-            self.zones[i].updateTemp(elapsed_time_ms)
-        pass
-    
+
+        if percent >= 0:
+            if self.heating == True and self.cooling == False:
+                pass
+            elif self.cooling == True and self.heating == False:
+                pass
+            elif self.cooling == False and self.heating == False:
+                elapsed_time_ms=elapsed_time_ms/2
+            else:
+                print("both heating and cooling are on")
+                elapsed_time_ms=elapsed_time_ms/4
+                pass
+
+            for i in range (num_zones):
+                self.zones[i].updateTemp(elapsed_time_ms)
+            pass
+        else:
+            elapsed_time_ms=elapsed_time_ms/4
     # Runs periodic simulation actions.
     def loop(self):
         # TODO: Calculate the amount of time elapsed since this last time this function was run. See CircuitPython's time module documentation
@@ -57,7 +71,13 @@ class Simulation:
         # temperature_measurement_node.py has an elapsed time calculation, and you may be able to use a similar approach here.
         
         # TODO: pass in the actual elapsed time.
-        self._update_temps(0)
+        time_start = time.monotonic_ns()
+        time_last_finish = time.monotonic_ns()
+        if time_last_finish >= time_start:
+            time_start = time.monotonic_ns()
+        elapsed_time_ms = abs(time_start - time_last_finish)*1000000
+        self._update_temps(elapsed_time_ms)
+        print(elapsed_time_ms)
 
 # Used for testing the simulation.
 if __name__ == '__main__':

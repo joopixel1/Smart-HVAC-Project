@@ -1,13 +1,12 @@
-#this should work
 import time
+
 class Zone:
     def __init__(self) -> None:
         self.temp = 20
-        self.damper = 0
+        self.damper = 50
         
     def getTemp(self):
         return self.temp 
-
 
     def setDamper(self, percent):
         self.damper= percent
@@ -17,6 +16,6 @@ class Zone:
         pastTime = time.monotonic_ns()
         while 1:
             pastTime = time.monotonic_ns()
-            if ((pastTime - initialTime)* 1000000) >= ms:
-                self.temp=15
-                break
+            if ((pastTime - initialTime) * 1000000) >= ms:
+                return self.temp
+            pastTime = initialTime
