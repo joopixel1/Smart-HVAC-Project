@@ -1,0 +1,33 @@
+Palacios & Obimakinde
+CPRE 287X
+Simulation Lab
+1) We learned that we can write code for controlling devices without having the hardware at all. By 
+simulating the values that could be given by sensors, we can get the logic of the system sorted. 
+Moving classes to different files works as a better way to make the code easier to understand by 
+people compared to having everything in a long file. Finally, Git wants to upload everything into 
+the cloud but we can use the .gitignore file to exclude sensitive files from being uploaded.
+2)
+a. The variable functions is a list of tasks that get appended in the simulation file. functions 
+then gets called in as a loop to run all of the tasks.
+b. node_type is created and set from the node_config.py file. It is hard coded within the 
+node_config.py file to 0.
+c. NODE_TYPE_SIMULATED also comes from the node_config.py file. It is hardcoded to 0 
+and compared to node_config.py in code.py
+d. Simulations.get_instance() will run simulation.py within code.py. It will run the class 
+Simulation with num_zones imported from node_config.
+e. The line f() runs each function stored in the list function[]. This acts as the main 
+application loop
+3) The simulation model gets the number of zones from node_config.py, which it will use its 
+simulation class functions. Get_temperature_f() will open zone.py and find the hard-coded value 
+of 20 under self.temp within the __init__(self) function of class Zone. This simulates a constant 
+temperature readout of 20 instead of looking to the temperature probes’ values. 
+The damper runs in a similar way, with the percent opened or shut being hard coded in the 
+zone.py __init__(self) function. Percent is set to 0 in our simulation. 
+The update_temps() function throttles how often the program checks for the temperature. The 
+simulation will try updating the temperature as fast as it can, and the update_temps() will keep 
+the program from updating until the time
+4 & 5)
+While this is lab is supposed to simulate the HVAC lab coming up, I believe it would be easier if 
+there was a simpler project skeleton than this one so that we can understand each individual 
+file. While this one is fully fleshed out with networking, pip, and putty; a simple temperature 
+measurement node, an actuation file, and the code/simulation files would have worked.
