@@ -3,7 +3,8 @@ import time
 from zone import Zone
 
 # TODO: define some values?
-percent = 50
+LOOP_INTERVAL_NS = 1000000000
+
 
 # The Simulation(R)
 _sim = None
@@ -14,75 +15,59 @@ _sim = None
 def get_instance():
     global _sim
     if _sim is None:
-        _sim = Simulation(num_zones)
+        _sim = Simulation()
     return _sim
 
 # A class that simulates the physical environment for the system.
 class Simulation:
+    
+    
     # Initializes the simulation.
-    def __init__(self, num_zones):
-       # TODO: initialize additional class variables. These are probably variables that represent the state of the physical system.
+    def __init__(self):
        self.zones=[]
        for i in range(num_zones):
-            newzone = Zone()
+            newzone = Zone(self)
             self.zones.append(newzone)
-       #self.num_zones = num_zones
        self.heating = False
        self.cooling = False
+       self.prev_time = time.monotonic_ns()
+
 
     # Returns the current temperature in the zone specified by zone_id
-    def get_temperature_f(self, zone_id):
-        # TODO: implement
-        
+    def get_temperature_f(self, zone_id):        
         return self.zones[zone_id].getTemp()
+
 
     # Sets the damper(s) for the zone specified by zone_id to the percentage
     # specified by percent. 0 is closed, 100 is fully open.
     def set_damper(self, zone_id, percent):
-        # TODO: implement
         self.zones[zone_id].setDamper(percent)
+
 
     # Update the temperatures of the zones, given that elapsed_time_ms milliseconds
     # have elapsed since this was previously called.
     def _update_temps(self, elapsed_time_ms):
-        # TODO: Update all temps
-
-        if percent >= 0:
-            if self.heating == True and self.cooling == False:
-                pass
-            elif self.cooling == True and self.heating == False:
-                pass
-            elif self.cooling == False and self.heating == False:
-                elapsed_time_ms=elapsed_time_ms/2
-            else:
-                print("both heating and cooling are on")
-                elapsed_time_ms=elapsed_time_ms/4
-                pass
-
+        
+        if elapsed_time_ms >= LOOP_INTERVAL_NS:
             for i in range (num_zones):
-                self.zones[i].updateTemp(elapsed_time_ms)
-            pass
-        else:
-            elapsed_time_ms=elapsed_time_ms/4
+                self.zones[i].updateTemp()
+            self.prev_time = time.monotonic_ns()
+    
+    
     # Runs periodic simulation actions.
     def loop(self):
         # TODO: Calculate the amount of time elapsed since this last time this function was run. See CircuitPython's time module documentation
         # at http://docs.circuitpython.org/en/latest/shared-bindings/time/index.html. We recommend time.monotonic_ns(). Also note that
         # temperature_measurement_node.py has an elapsed time calculation, and you may be able to use a similar approach here.
-        
-        # TODO: pass in the actual elapsed time.
-        time_start = time.monotonic_ns()
-        time_last_finish = time.monotonic_ns()
-        if time_last_finish >= time_start:
-            time_start = time.monotonic_ns()
-        elapsed_time_ms = abs(time_start - time_last_finish)*1000000
-        self._update_temps(elapsed_time_ms)
-        print(elapsed_time_ms)
+        curr_time = time.monotonic_ns()
+        self._update_temps(curr_time - self.prev_time)
+
 
 # Used for testing the simulation.
 if __name__ == '__main__':
     sim = get_instance()
-
+    now, j = time.monotonic_ns(), 0
+    
     while True:
         sim.loop()
         time.sleep(1)
@@ -92,3 +77,12 @@ if __name__ == '__main__':
             print(f'Zone {zone} temp: {temp}')
 
         # TODO: add additional testing code, e.g. what happens if you turn on heating/cooling?
+        if(time.monotonic_ns() - now) >= (5*LOOP_INTERVAL_NS):
+            
+            if j%4==0: sim.heating = True
+            elif j%4==1: sim.heating = False
+            elif j%4==2: sim.cooling = True
+            elif j%4==3: sim.cooling = False
+            
+            now = time.monotonic_ns()
+            j += 1

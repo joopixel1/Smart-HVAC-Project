@@ -48,8 +48,8 @@ def c_to_f(value):
 # the zone we're getting the reading for (used when simulating)
 def get_current_temperature_f(zone=0):
     if node_type == NODE_TYPE_SIMULATED:
-        # TODO: connect to the simulation.
-        return 0
+        sim = simulation.get_instance()
+        return sim.get_temperature_f(zone)
 
     if board.board_id == 'unexpectedmaker_feathers2':
         return c_to_f(lm35_temperature_c())
