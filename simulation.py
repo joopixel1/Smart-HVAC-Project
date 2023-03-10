@@ -74,6 +74,7 @@ class Simulation:
 if __name__ == '__main__':
     sim = get_instance()
     #now, j = time.monotonic_ns(), 0
+    #now, j = time.monotonic_ns(), 0
     
     while True:
         sim.loop()
