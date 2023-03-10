@@ -2,6 +2,8 @@ from node_config import *
 import networking
 import time
 import sensing
+import adafruit_dotstar
+import board
 
 # Set up networking.
 networking.connect_to_network()
@@ -14,6 +16,23 @@ prev_temps = [None] * num_zones
 # Timing variables.
 LOOP_INTERVAL_NS = 1000000000
 _prev_time = time.monotonic_ns()
+
+# Create a DotStar instance
+dotstar = adafruit_dotstar.DotStar(board.APA102_SCK, board.APA102_MOSI, 1, brightness=0.5, auto_write=True)
+
+#for d dotstar
+def dotstar_color_wheel(wheel_pos):
+    """Color wheel to allow for cycling through the rainbow of RGB colors."""
+    wheel_pos = wheel_pos % 255
+
+    if wheel_pos < 85:
+        return 255 - wheel_pos * 3, 0, wheel_pos * 3
+    elif wheel_pos < 170:
+        wheel_pos -= 85
+        return 0, wheel_pos * 3, 255 - wheel_pos * 3
+    else:
+        wheel_pos -= 170
+        return wheel_pos * 3, 255 - wheel_pos * 3, 0
 
 # Runs periodic node tasks.
 def loop():
@@ -33,8 +52,14 @@ def loop():
 
     for zone in zones:
         current_temp = sensing.get_current_temperature_f(zone)
-
         print(f'Zone {zone} temp: {current_temp}')
+
+        #for displaying on an led: red means warm, blue means cold
+        # Get the R,G,B values of the next colour
+        r,g,b = dotstar_color_wheel(current_temp*2.55)
+        # Set the colour on the dotstar
+        dotstar[0] = ( r, g, b, 0.6)
+
 
         # TODO: do we need to report the temperature EVERY time? Report only if the new reading is
         # significantly different from the old one!

@@ -1,8 +1,13 @@
 from node_config import *
 # Don't import hardware libraries if simulating
-if node_type != NODE_TYPE_SIMULATED:
-    import board
-
+import board
+import digitalio
+import time
+import simulation
+pinHeat = digitalio.DigitalInOut(board.D13)
+pinCool = digitalio.DigitalInOut(board.D9)
+pinHeat.direction = digitalio.Direction.OUTPUT
+pinCool.direction = digitalio.Direction.OUTPUT
 #------------Damper control-----------#
 # Parallax Standard Servo (https://www.parallax.com/product/parallax-standard-servo/)
 SERVO_ACTUATION_RANGE = 180  #degrees
@@ -34,12 +39,18 @@ else:
 # Control the heater (turn on by passing in True, off by passing in False)
 def set_heating(value):
     # TODO: heater control
-    pass
+    sim = simulation.get_instance()
+    pinHeat.value = value
+    sim.heat = value
+    sim.cool = not value
 
 # Control the cooler (turn on by passing in True, off by passing in False)
 def set_cooling(value):
     # TODO: cooler control
-    pass
+    sim = simulation.get_instance()
+    pinCool.value = value
+    sim.cool = value
+    sim.heat =  not value
 
 # Control the circulation fan (turn on by passing in True, off by passing in False)
 def set_circulating(value):

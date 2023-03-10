@@ -28,9 +28,12 @@ class Simulation:
        for i in range(num_zones):
             newzone = Zone(self)
             self.zones.append(newzone)
-       self.heating = False
-       self.cooling = False
+       #True means heat, cold is cool 
+       self.heat = True 
+       self.cool = False
        self.prev_time = time.monotonic_ns()
+       self.heaterTemp = 100
+       self.coolerTemp = 0
 
 
     # Returns the current temperature in the zone specified by zone_id
@@ -63,10 +66,14 @@ class Simulation:
         self._update_temps(curr_time - self.prev_time)
 
 
+
+
+
+
 # Used for testing the simulation.
 if __name__ == '__main__':
     sim = get_instance()
-    now, j = time.monotonic_ns(), 0
+    #now, j = time.monotonic_ns(), 0
     
     while True:
         sim.loop()
@@ -77,12 +84,9 @@ if __name__ == '__main__':
             print(f'Zone {zone} temp: {temp}')
 
         # TODO: add additional testing code, e.g. what happens if you turn on heating/cooling?
-        if(time.monotonic_ns() - now) >= (5*LOOP_INTERVAL_NS):
-            
-            if j%4==0: sim.heating = True
-            elif j%4==1: sim.heating = False
-            elif j%4==2: sim.cooling = True
-            elif j%4==3: sim.cooling = False
-            
-            now = time.monotonic_ns()
-            j += 1
+        if sim.heaterTemp-1 <= temp and sim.heat_cool :
+            sim.heat = True
+            sim.cool = False
+        if sim.coolerTemp+1  >= temp and not sim.heat_cool:
+            sim.cool = True
+            sim.heat = False
