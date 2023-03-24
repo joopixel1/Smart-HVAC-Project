@@ -4,6 +4,9 @@ import board
 import digitalio
 import time
 import simulation
+import pwmio
+from adafruit_motor import servo
+
 pinHeat = digitalio.DigitalInOut(board.D13)
 pinCool = digitalio.DigitalInOut(board.D9)
 pinHeat.direction = digitalio.Direction.OUTPUT
@@ -17,12 +20,25 @@ SERVO_MAX_PULSE = 2250 #us, for PWM control
 if node_type != NODE_TYPE_SIMULATED:
     # Damper initialization - use pins A0, A1, and A2 for zones 1, 2, and 3 respectively
     # TODO: damper initialization
-    pass
+    pwmZone1 = pwmio.PWMOut(board.A0, duty_cycle=0, frequency=50)
+    pwmZone2 = pwmio.PWMOut(board.A1, duty_cycle=0, frequency=50)
+    pwmZone3 = pwmio.PWMOut(board.A2, duty_cycle=0, frequency=50)
+    servoZone = []
+    servoZone.append(servo.Servo(pwmZone1))
+    servoZone.append(servo.Servo(pwmZone2))
+    servoZone.append(servo.Servo(pwmZone3))
 
 # Set the damper for the given zone to the given percent (0 means closed, 100 means fully open)
 def set_damper(zone, percent):
     # TODO: damper control
-    pass
+    if percent >=100:
+        percent =100
+    elif percent<=0:
+        percent =0
+    servoZone[zone].angle = 45 + (90*percent/100)
+    sim = simulation.get_instance()
+    sim.set_damper(zone, percent)
+    
 #------------End damper control-----------#
 
 #------------Heat/cool control-----------#
@@ -32,6 +48,7 @@ if node_type == NODE_TYPE_SIMULATED:
 elif board.board_id == 'unexpectedmaker_feathers2':
     # Initialize digital outputs for heating, cooling, and the circulation fan
     # Use pins D13 for heat, D9 and D6 for cooling, and D12 for the fan
+
     pass
 else:
     pass
