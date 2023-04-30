@@ -31,23 +31,34 @@ SECONDARY_HOST = secrets["secondary_node_ip"]
 # Maximum length of a message sent over the socket. We set this to the same as the maximum Command length.
 SOCKET_MESSAGE_MAX_LENGTH = 100
 
-# Get the MQTT username.
-mqtt_username = secrets["mqtt_username"]
+# Configure the MQTT connection info. Currently not needed for mosquitto.
+#aio_username = secrets["aio_username"]
+#aio_key = secrets["aio_key"]
 
 # These are the MQTT feeds used. Feeds that are lists are indexed by zone_id.
-TEMP_FEEDS = []
-SETPOINT_FEEDS = []
-COOLING_HEATING_FEED = mqtt_username + "/feeds/287x-hvac.cooling-and-heating"
+COOLING_FEED = "cooling"
+HEATING_FEED = "heating"
+FAN_FEED = "fan"
+SETTEMP_FEEDS = []
 DAMPER_FEEDS = []
+TEMP_FEEDS = []
+
+CONTROL = "manual-mode"
+SETCOOLING_FEED = "set-cooling"
+SETHEATING_FEED = "set-heating"
+SETFAN_FEED = "set-fan"
+SETDAMPER_FEEDS = []
+
+SECONDARY_NODE = "sending to secondary node"
 
 # Set up some socket resources.
 if USE_BUILTIN_NETWORKING:
     # The CPython socket module seems to work as a drop-in replacement for CircuitPython's SocketPool.
     pool = socket
-    my_socket = socket.socket()
+    my_socket = pool.socket(pool.AF_INET, pool.SOCK_STREAM)
 else:
     pool = socketpool.SocketPool(wifi.radio)
-    my_socket = None
+    my_socket = pool.socket(pool.AF_INET, pool.SOCK_STREAM)
 
 # Connects to the configured network. Should be called before attempting any network operations.
 def connect_to_network():
@@ -73,7 +84,7 @@ def connect_to_network():
 #-----------Socket comm code-----------#
 
 # A buffer to hold data coming in over the socket connection.
-socket_buffer = bytearray([0] * SOCKET_MESSAGE_MAX_LENGTH)
+socket_buffer = bytearray(SOCKET_MESSAGE_MAX_LENGTH)
 
 # Connect to the secondary node over the network socket.
 def socket_connect():
@@ -83,10 +94,23 @@ def socket_connect():
         return
 
     # Refresh the socket - seems to help sometimes
-    global my_socket
-    my_socket = pool.socket()
+    global my_socket, pool
+    my_socket = pool.socket(pool.AF_INET, pool.SOCK_STREAM)
 
-    #TODO: socket connection code for real hardware
+    # TRY AND USE DIS
+    # addr_info = pool.getaddrinfo(
+    #     host, port, 0, pool.SOCK_STREAM
+    # )[0]
+
+    # sock = pool.socket(
+    #     addr_info[0], addr_info[1], addr_info[2]
+    # )
+
+    try:    
+        my_socket.connect((str(wifi.radio.ipv4_address), TCP_PORT))
+    except:
+        print("my_socket.send(msg) failed")
+    
 
 # Internal variable for tracking if we're currently listening (secondary control node does this).
 _socket_listening = False
@@ -111,14 +135,22 @@ def socket_listen(callback_function):
         return
 
     # Refresh the socket - seems to help sometimes
-    global my_socket
-    my_socket = pool.socket()
-    
+    global my_socket, pool
+    my_socket = pool.socket(pool.AF_INET, pool.SOCK_STREAM)
+
     # TODO: actual socket listening...
+    my_socket.setblocking(False)
+    my_socket.bind((wifi.radio.ipv4_address, TCP_PORT))
+    #my_socket.bind((PRIMARY_HOST, TCP_PORT))
+    my_socket.listen(5)
+    
 
 # Send a message over the socket. msg is the message to be sent and should be a string.
 def socket_send_message(msg):
     # TODO: check the message length
+    if len(str(msg)) > SOCKET_MESSAGE_MAX_LENGTH:
+        print("message is too long")
+        return
 
     # If it's a simulated node, we directly hand the message to the receive callback function.
     if node_type == NODE_TYPE_SIMULATED:
@@ -129,10 +161,16 @@ def socket_send_message(msg):
         return
 
     # TODO: actual socket send...
+    try:
+        global my_socket, socket_buffer
+        socket_buffer = bytearray(str(msg), 'utf-8')
+        my_socket.send(socket_buffer)
+    except:
+        print("socket not connected")
 
 # Disconnect the socket. Might not actually get called since our application lives "forever."
 def socket_disconnect():
-    global _socket_listening
+    global _socket_listening, my_socket
     _socket_listening = False
     my_socket.close()
 
@@ -146,10 +184,10 @@ def socket_disconnect():
 mqtt_client = MQTT.MQTT(
     broker=secrets["mqtt_broker"],
     port=secrets["port"],
-    username=secrets["mqtt_username"],
-    password=secrets["mqtt_key"],
+    #username=secrets["aio_username"],
+    #password=secrets["aio_key"],
     socket_pool=pool,
-    ssl_context=ssl.create_default_context(),
+    #ssl_context=ssl.create_default_context(),
 )
 
 # Internal state variable
@@ -166,7 +204,7 @@ _message_received_callbacks = []
 
 # Callback function that is called when the MQTT client connects to the broker
 def mqtt_connected(client, userdata, flags, rc):
-    print("Connected to Adafruit IO!")
+    print("Connected to MQTT broker!")
 
     # Subscribe to the queued feeds
     for feed in _queued_feeds:
@@ -179,7 +217,7 @@ def mqtt_connected(client, userdata, flags, rc):
 
 # Callback function that is called when the MQTT client disconnects from the broker
 def mqtt_disconnected(client, userdata, rc):
-    print("Disconnected from Adafruit IO!")
+    print("Disconnected from MQTT broker!")
 
 # Callback function that is called when the MQTT client receives a message.
 # This function, in turn, calls all registered callbacks from different modules.
@@ -190,7 +228,7 @@ def mqtt_message_received(client, topic, message):
             cb(client, topic, message)
         except TypeError as e:
             # Assume this means it's a one-parameter callback, such as the socket comm callback
-            if 'cooling-and-heating' in topic:
+            if SECONDARY_NODE in topic:
                 import command
                 cmd = command.Command(type=command.TYPE_HEAT_COOL, values=[message])
                 cb(str(cmd))
@@ -210,17 +248,16 @@ def mqtt_initialize():
     _mqtt_is_initialized = True
 
     # Define the feed lists
-    TEMP_FEEDS.extend([mqtt_username + f"/feeds/287x-hvac.temperature-zone-{i}" for i in range(1, num_zones + 1)])
-    SETPOINT_FEEDS.extend([mqtt_username + f"/feeds/287x-hvac.set-point-zone-{i}" for i in range(1, num_zones + 1)])
-    DAMPER_FEEDS.extend([mqtt_username + f"/feeds/287x-hvac.damper-zone-{i}" for i in range(1, num_zones + 1)])
+    TEMP_FEEDS.extend([f"temperature-zone-{i}" for i in range(1, num_zones + 1)])
+    SETDAMPER_FEEDS.extend([f"set-point-zone-{i}" for i in range(1, num_zones + 1)])
+    DAMPER_FEEDS.extend([f"damper-zone-{i}" for i in range(1, num_zones + 1)])
+    SETTEMP_FEEDS.extend([f"set-temp-zone-{i}" for i in range(1, num_zones + 1)])
 
     # Print the defined feeds for debugging purposes
-    print(f"Feeds available: {TEMP_FEEDS}, {SETPOINT_FEEDS}, {DAMPER_FEEDS}, {COOLING_HEATING_FEED}")
+    print(f"Feeds available: {TEMP_FEEDS}, {SETDAMPER_FEEDS}, {DAMPER_FEEDS}, {SETTEMP_FEEDS}, {COOLING_FEED}, {HEATING_FEED}, {FAN_FEED}, {CONTROL}, {SETCOOLING_FEED}, {SETHEATING_FEED}, {SETFAN_FEED}")
 
 # Connects to the MQTT broker (if needed) and subscribes to the list of feeds provided.
 # message_callback is the function that is called when a new message is received from a subbed feed.
-# Currently only one message callback is supported. This works for the current architecture
-# because only the primary control node needs to subscribe to feeds.
 def mqtt_connect(feeds = [], message_callback = None):
     # Save the callback function. It will be called in the intermediate callback.
     if message_callback is not None:
@@ -229,10 +266,12 @@ def mqtt_connect(feeds = [], message_callback = None):
     # Point the MQTT client at the intermediate callback.
     mqtt_client.on_message = mqtt_message_received
 
-    try:
+    if mqtt_client.is_connected():
         # Check to see if the client is connected. For some reason this throws an error if it's not, so we're
         # not even bothering to check the return value.
-        mqtt_client.is_connected()
+        #print(mqtt_client.is_connected())
+
+        print("MQTT is already connected.")
 
         # If we are connected and were given feeds to subscribe to, we can do that now.
         for feed in [f for f in feeds if f not in _subscribed_feeds]:
@@ -241,15 +280,16 @@ def mqtt_connect(feeds = [], message_callback = None):
             _subscribed_feeds.append(feed)
 
     # This error will be thrown if we're not connected.
-    except MQTT.MMQTTException as e:
+    else:
         print("MQTT not connected yet...")
 
         # Save the given feeds so that we can subscribe to them after we are connected.
         _queued_feeds.extend(feeds)
 
         # Connect the client to the MQTT broker. If the connection is successful, the on_connect callback will be called.
-        print("Connecting to Adafruit IO...")
+        print("Connecting to MQTT broker...")
         mqtt_client.connect()
+        time.sleep(1)
 
 # Publish a message to a feed. feed is the feed to publish to, and value is the body of the message.
 def mqtt_publish_message(feed, value):
@@ -260,6 +300,7 @@ def mqtt_publish_message(feed, value):
         mqtt_connect()
 
 #------------End MQTT code-----------------#
+
 
 # Timing variables
 LOOP_INTERVAL_NS = 100000000
@@ -273,14 +314,26 @@ def loop():
     curr_time = time.monotonic_ns()
     if curr_time - _prev_time < LOOP_INTERVAL_NS:
         return
-
     _prev_time = curr_time
-
+        
     # Check for new MQTT messages.
     try:
         if mqtt_client.is_connected():
             mqtt_client.loop()
     except MQTT.MMQTTException as e:
+        print('Warning: MQTT loop failed')
         pass
+    except OSError as e:
+        print('MQTT disconnected, reconnecting...')
+        mqtt_connect()
 
     # TODO: Check for new socket connections.
+    try:
+        if _socket_listening:
+            (sock, addr) = my_socket.accept()
+            v = sock.recv_into(socket_buffer, socket_buffer.length)
+            if v:
+                 _socket_callback(str(socket_buffer))
+    except OSError as e:
+        print('socket failed -sorry')
+        #socket version of reconnecting

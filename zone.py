@@ -2,9 +2,7 @@
 
 class Zone:
     def __init__(self, simul ) -> None:
-        self.temp = 30
-        self.damper = 10
-        self.temp = 20
+        self.temp = 22
         self.damper = 10
         self.simul = simul
 
@@ -13,14 +11,13 @@ class Zone:
     
     def setDamper(self, percent):
         self.damper = percent
+    
+    def getDamper(self):
+        return self.damper
         
     def updateTemp(self):
         if(self.simul.heat):
-            self.temp += self.damper*(self.simul.heaterTemp - self.temp)/100
+            self.temp += ((100 - self.damper)*(self.simul.heaterMaxTemp - self.temp)/100) / 20
         if(self.simul.cool):
-            self.temp += self.damper*(self.simul.coolerTemp - self.temp)/100
-        if(self.simul.heating):
-            self.temp += self.damper*(self.simul.heaterTemp - self.temp)/100
-        elif(self.simul.cooling):
-            self.temp += self.damper*(self.simul.coolerTemp - self.temp)/100
+            self.temp += ((100 - self.damper)*(self.simul.coolerMaxTemp - self.temp)/100) / 20
             
