@@ -42,7 +42,7 @@ def loop():
 
         # TODO: do we need to report the temperature EVERY time? Report only if the new reading is
         # significantly different from the old one!
-        if prev_temps[zone] == None or current_temp > (prev_temps[zone]+1):
+        if prev_temps[zone] == None or abs(current_temp -prev_temps[zone]) >1:
             networking.mqtt_publish_message(networking.TEMP_FEEDS[zone], current_temp)
             prev_temps[zone] = current_temp
                 

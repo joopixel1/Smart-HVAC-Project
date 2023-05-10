@@ -2,6 +2,7 @@
 TYPE_NONE = 0
 TYPE_DAMPER = 1
 TYPE_HEAT_COOL = 2
+TYPE_MODE = 3
 
 # Define possible values for Commands of TYPE_HEAT_COOL
 HEAT_COOL_OFF = 0
@@ -20,7 +21,7 @@ class Command:
         self.type = type
         self.values = values
 
-        # If a command string is passed in, parse it to initialize this Command
+         # If a command string is passed in, parse it to initialize this Command
         if msg is not None:
             words = msg.split(COMMAND_SEPARATOR)
             try:
@@ -29,17 +30,11 @@ class Command:
                 print(f'Warning: unable to convert {words[0]} to int, setting command type to NONE')
                 self.type = TYPE_NONE
             if len(words) > 1:
-                self.values = words[1:]
-
-        # The values should be a list - fix it if not.
-        if not isinstance(self.values, list):
-            self.values = [self.values]
+                self.values = words[1]
 
     # This function is called when a Command is converted to a string with str(). This is done
     # by the primary control node in order to get the message body to send over the network.
     def __str__(self):
-        ret = f'{self.type}'
-        for val in self.values:
-            ret += f':{val}'
+        ret = f'{self.type}:{self.values}'
         return ret
 
