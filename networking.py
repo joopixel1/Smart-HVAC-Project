@@ -44,12 +44,14 @@ DAMPER_FEEDS = []
 TEMP_FEEDS = []
 
 CONTROL = "manual-mode"
-SETCOOLING_FEED = "set-cooling"
-SETHEATING_FEED = "set-heating"
+SETHEAT_FEED = "set-heat"
+SETCOOL_FEED = "set-cool"
 SETFAN_FEED = "set-fan"
 SETDAMPER_FEEDS = []
 
 SECONDARY_NODE = "sending to secondary node"
+SECONDARY_MODE = "sending MODE to secondary node"
+
 
 # Set up some socket resources.
 if USE_BUILTIN_NETWORKING:
@@ -223,14 +225,18 @@ def mqtt_disconnected(client, userdata, rc):
 # This function, in turn, calls all registered callbacks from different modules.
 def mqtt_message_received(client, topic, message):
     for cb in _message_received_callbacks:
-        print(f"MQTT callback for {cb}")
+        # print(f"MQTT callback for {cb}")
         try:
             cb(client, topic, message)
         except TypeError as e:
             # Assume this means it's a one-parameter callback, such as the socket comm callback
             if SECONDARY_NODE in topic:
                 import command
-                cmd = command.Command(type=command.TYPE_HEAT_COOL, values=[message])
+                cmd = command.Command(type=command.TYPE_HEAT_COOL, values=message)
+                cb(str(cmd))
+            elif SECONDARY_MODE in topic:
+                import command
+                cmd = command.Command(type=command.TYPE_MODE, values=message)
                 cb(str(cmd))
 
 # Configure the callback functions for the client.
@@ -254,7 +260,7 @@ def mqtt_initialize():
     SETTEMP_FEEDS.extend([f"set-temp-zone-{i}" for i in range(1, num_zones + 1)])
 
     # Print the defined feeds for debugging purposes
-    print(f"Feeds available: {TEMP_FEEDS}, {SETDAMPER_FEEDS}, {DAMPER_FEEDS}, {SETTEMP_FEEDS}, {COOLING_FEED}, {HEATING_FEED}, {FAN_FEED}, {CONTROL}, {SETCOOLING_FEED}, {SETHEATING_FEED}, {SETFAN_FEED}")
+    print(f"Feeds available: {TEMP_FEEDS}, {SETDAMPER_FEEDS}, {DAMPER_FEEDS}, {SETTEMP_FEEDS}, {COOLING_FEED}, {HEATING_FEED}, {FAN_FEED}, {CONTROL}, {SETHEAT_FEED}, {SETCOOL_FEED},{SETFAN_FEED}")
 
 # Connects to the MQTT broker (if needed) and subscribes to the list of feeds provided.
 # message_callback is the function that is called when a new message is received from a subbed feed.
@@ -321,7 +327,6 @@ def loop():
         if mqtt_client.is_connected():
             mqtt_client.loop()
     except MQTT.MMQTTException as e:
-        print('Warning: MQTT loop failed')
         pass
     except OSError as e:
         print('MQTT disconnected, reconnecting...')

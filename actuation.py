@@ -31,8 +31,11 @@ else:
     servoZone.append(servo.Servo(pwmZone2, SERVO_ACTUATION_RANGE, SERVO_MIN_PULSE, SERVO_MAX_PULSE))
     servoZone.append(servo.Servo(pwmZone3, SERVO_ACTUATION_RANGE, SERVO_MIN_PULSE, SERVO_MAX_PULSE))
 
-# Set the damper for the given zone to the given percent (0 means closed, 100 means fully open)
+# Set the damper for the given zone to the given percent (0 means open, 100 means fully closed)
 def set_damper(zone, percent):
+
+    print("actually editing it.")
+
     if percent >=100:
         percent =100
     elif percent<=0:
